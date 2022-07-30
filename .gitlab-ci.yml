@@ -21,7 +21,7 @@ test-aws-debian:
   tags:
     - linux
   script:
-    - apt update && apt install -y python3-pip
+    - apt update && apt install -y python3-pip sudo
     - python3 -m pip install poetry pip wheel --upgrade
     - python3 -m pip install .
     - make ci

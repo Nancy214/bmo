@@ -24,5 +24,6 @@ test-aws-debian:
     - apt update && apt install -y python3-pip sudo
     - python3 -m pip install poetry pip wheel --upgrade
     - python3 -m pip install .
-    - make ci
-    - bash .ci/debian10.sh
+    - export PATH=$HOME/.local/bin:$PATH
+    - bmo subcom script caddy_debian.sh
+    - bmo subcom script node_exporter.sh

@@ -76,11 +76,7 @@ def check_ssl(server: str, port: int = 443):
         p1.stdout.close()  # Allows pss1 to recieve a SIGPIPE if pparse exits.
     comm = pparse.communicate()
     assert comm
-    out = b""
-    if comm[0] is not None:
-        out += comm[0]
-    if comm[1] is not None:
-        out += comm[1]
+    out = "".join([x for x in comm if x is not None])
     logging.info(f"out={out}")
     notbefore = bmo.common.search_pat(r"notBefore=(.+?)\n", out)
     notafter = bmo.common.search_pat(r"notAfter=(.+?)\n", out)

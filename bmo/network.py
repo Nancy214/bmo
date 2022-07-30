@@ -74,9 +74,13 @@ def check_ssl(server: str, port: int = 443):
 
     if p1 is not None and p1.stdout is not None:
         p1.stdout.close()  # Allows pss1 to recieve a SIGPIPE if pparse exits.
-    out = (
-        pparse.communicate()[0] + pparse.communicate()[1]
-    )  # read from stdout and stderr
+    comm = pparse.communicate()
+    assert comm
+    out = b""
+    if comm[0] is not None:
+        out += comm[0]
+    if comm[1] is not None:
+        out += comm[1]
     logging.info(f"out={out}")
     notbefore = bmo.common.search_pat(r"notBefore=(.+?)\n", out)
     notafter = bmo.common.search_pat(r"notAfter=(.+?)\n", out)
@@ -85,8 +89,8 @@ def check_ssl(server: str, port: int = 443):
     notbefore = parse_x509_date(notbefore.group(1))
     notafter = parse_x509_date(notafter.group(1))
     timetoexpire = (notafter - dateutil.utils.today(notafter.tzinfo)).days
-    assert timetoexpire >= 0, f"Certificate expired"
-    bmo.common.success(f"Certificates look good.")
+    assert timetoexpire >= 0, "Certificate expired"
+    bmo.common.success("Certificates look good.")
     typer.echo(f"days to expire={timetoexpire}")
 
 

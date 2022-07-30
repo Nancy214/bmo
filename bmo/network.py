@@ -43,14 +43,17 @@ def speedtest():
 @app.command()
 def check_ssl(server: str, port: int = 443):
     """Check SSL certificate of a given url."""
+    assert server is not None
+    assert len(server) > 0
     if not server.startswith("https"):
         server = f"https://{server}"
     openssl = bmo.common.find_program("openssl")
     if openssl is None:
-        logging.info(f"openssl is not found. Please install it and try again.")
+        logging.info("openssl is not found. Please install it and try again.")
         return ""
 
     domain = urlparse(server).netloc
+    assert domain
     server = server.replace("https://", "")
 
     logging.info(f"Checking certificate for server={server}, domain={domain}:{port}")

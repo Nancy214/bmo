@@ -1,14 +1,28 @@
 image: debian:10.8
 
-before_script:
-  - apt update
-  - apt install -y gcc make python3-pip python3
-  - python3 -m pip install poetry
-
 build:
+  image: ubuntu
   stage: build
   tags:
     - linux
+
+  before_script:
+    - apt update
+    - apt install -y gcc make python3-pip python3
+    - python3 -m pip install poetry
+
   script:
+    - make ci
+    - bash .ci/debian10.sh
+
+test-aws-debian:
+  image: debian:10.8
+  stage: test
+  tags:
+    - linux
+  script:
+    - apt update && apt install -y python3-pip
+    - python3 -m pip install poetry pip wheel --upgrade
+    - python3 -m pip install .
     - make ci
     - bash .ci/debian10.sh

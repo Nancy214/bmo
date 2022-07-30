@@ -54,6 +54,7 @@ def download_and_run_script(
         with open(scriptpath, "w") as f:
             f.write(res.text)
 
+    typer.echo(f"Writing script to {scriptpath}")
     if download_only:
         with scriptpath.open() as f:
             return f.read()

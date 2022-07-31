@@ -44,7 +44,7 @@ def pages_to_html(pages):
     for page in pages:
         url = page["url"]
         title = title_from_url(url)
-        html.append(f"<li> {page_icon(page)} <a href='{url}'>{title}</a></li>")
+        html.append(f" <li> {page_icon(page)} <a href='{url}'>{title}</a></li>")
     html.append("</ul>")
     return "\n".join(html)
 
@@ -94,7 +94,7 @@ class Notion:
         return response.json()
 
     def get_block(self, blockid):
-        return self.get(f'blocks/{blockid}')
+        return self.get(f"blocks/{blockid}")
 
     def backup(self, outdir: T.Optional[Path]):
         """Backup notion content"""
@@ -123,39 +123,32 @@ class Notion:
                         file.write(json.dumps(child))
         logging.info("backup is complete")
 
-    def _weekly_update_db(self, dbid: str, title: str) -> str:
+    def weekly_update_db(
+        self, dbid: str, title: str, include_updated: bool = True
+    ) -> str:
         """Results for a database"""
-        html = [f"<h1> {title} </h1>"]
+        html = [f"\n<h1>{title}</h1>"]
         payload = dict(page_size=100)
         pages = self.post(f"databases/{dbid}/query", payload=payload)
-        _pprint(pages[-1])
-
         NOW = datetime.now(timezone.utc)
-
         new, updated = [], []
         for page in pages:
             let = dateutil.parser.parse(page["last_edited_time"])
             ct = dateutil.parser.parse(page["created_time"])
-            if (NOW - let).days < 7:
-                updated.append(page)
-            if (datetime.now(timezone.utc) - let).days < 7:
+            if (datetime.now(timezone.utc) - ct).days < 7:
                 new.append(page)
+            elif (NOW - let).days < 7:
+                if include_updated:
+                    updated.append(page)
         html.append("<h2>New</h3>")
         html.append(pages_to_html(new))
-
-        html.append("<h2>Updated</h3>")
-        html.append(pages_to_html(updated))
+        if updated:
+            html.append("<h2>Updated</h3>")
+            html.append(pages_to_html(updated))
         return "\n".join(html)
 
-    def weekly_update_db(self):
+    def posts_from_last_week(self):
         """Show weekly updates."""
-        # logging.info("Weekly update")
-        html = self._weekly_update_db("0d4a63a495f84fd0bd9632c82e0963b8", "Journal")
-        print(html)
-
-    def weekly_update(self):
-        """Show weekly updates."""
-        # logging.info("Weekly update")
         payload = {
             "sort": {"direction": "descending", "timestamp": "last_edited_time"},
             "filter": {"property": "object", "value": "page"},
@@ -167,6 +160,24 @@ class Notion:
                 break
             print(i, page["url"])
         _pprint(pages[-1])
-
-
         # print(html)
+
+    def weekly_update(self):
+        """Show weekly updates."""
+        # logging.info("Weekly update")
+        html = ""
+        html += self.weekly_update_db(
+            "444af744203a42f1999356b32a150d2d", "Tasks and Roadmap", False
+        )
+        html += self.weekly_update_db("0d4a63a495f84fd0bd9632c82e0963b8", "Journal")
+        html += self.weekly_update_db(
+            "ecaca4cfe5fb436f83e04a4d1b89fc4d", "Project Docs"
+        )
+        html += self.weekly_update_db(
+            "994093f42d194f68811df2cbdc91c27b", "Office Inventory", False
+        )
+        html += self.weekly_update_db(
+            "1778deba18a34a338133078b865e5ece", "What are we reading?", False
+        )
+        return html
+

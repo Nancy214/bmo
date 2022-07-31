@@ -5,11 +5,15 @@ __email__ = "dilawar@subcom.tech"
 
 import logging
 import requests
-import datetime
+from datetime import datetime, timezone
+import dateutil
+import pprint
 import json
 
 import typing as T
 from pathlib import Path
+
+_pprint = pprint.pprint
 
 
 class Notion:
@@ -31,19 +35,21 @@ class Notion:
         return f"https://api.notion.com/v1/{endpoint}"
 
     def post(self, endpoint: str, payload={}):
-        response = requests.post(self._url(endpoint), headers=self._headers(), json=payload)
+        response = requests.post(
+            self._url(endpoint), headers=self._headers(), json=payload
+        )
         assert response.ok, response.text
-        return response.json()['results']
+        return response.json()["results"]
 
     def get(self, endpoint: str):
         response = requests.get(self._url(endpoint), headers=self._headers())
         assert response.ok, response.text
-        return response.json()['results']
+        return response.json()["results"]
 
     def backup(self, outdir: T.Optional[Path]):
         """Backup notion content"""
         assert self.token is not None, "Token can't be None or empty"
-        timestamp = datetime.datetime.now().isoformat()
+        timestamp = datetime.now().isoformat()
 
         folder = Path.home() / "backups" / Path(f"notion_backup-{timestamp}")
         if outdir is not None:
@@ -67,9 +73,9 @@ class Notion:
                         file.write(json.dumps(child))
         logging.info("backup is complete")
 
-    def _weekly_update(self, dbid:str):
+    def _weekly_update(self, dbid: str):
         """Results for a database"""
-        payload = dict(page_size=100) 
+        payload = dict(page_size=100)
         return self.post(f"databases/{dbid}/query", payload=payload)
 
     def weekly_update(self):
@@ -77,4 +83,7 @@ class Notion:
         logging.info("Weekly update")
         pages = self._weekly_update("0d4a63a495f84fd0bd9632c82e0963b8")
         for page in pages:
-            print(page['id'], page)
+            let = dateutil.parser.parse(page['last_edited_time'])
+            if (datetime.now(timezone.utc) - let).days < 7:
+                print(page['url'], let)
+        _pprint(pages[-1])

@@ -12,12 +12,12 @@ import typer
 
 app = typer.Typer()
 
-@app.command("notion_update")
+@app.command("weekly_email")
 def notion_weekly_progress(token: str = typer.Argument("", envvar="NOTION_TOKEN")):
-    """Do the sync with notion.""" 
+    """Do the sync with notion."""
     if not token:
         logging.error("Empty token. Add `--help` to usage.")
-        return 
+        return
     notion = bmo.helpers.notion.Notion(token)
     notion.weekly_update()
 

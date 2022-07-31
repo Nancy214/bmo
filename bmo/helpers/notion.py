@@ -16,6 +16,53 @@ from pathlib import Path
 _pprint = pprint.pprint
 
 
+def title_from_url(url: str) -> str:
+    """Notion title always reflect the URL. Its possible to get the title from
+    the URL.
+
+    Notes
+    -----
+    1. https://dev.to/adamcoster/change-a-url-without-breaking-existing-links-4m0d
+    """
+    txt = url.split("/")[-1]
+    # last 32 chars are UUID
+    txt = txt[:-32]
+    txt = txt.replace("-", " ")
+    return txt
+
+
+def page_icon(page) -> str:
+    if page is None:
+        return ""
+    if page.get("icon") is not None:
+        return page["icon"].get("emoji", "")
+    return ""
+
+
+def pages_to_html(pages):
+    html = ["<ul>"]
+    for page in pages:
+        url = page["url"]
+        title = title_from_url(url)
+        html.append(f"<li> {page_icon(page)} <a href='{url}'>{title}</a></li>")
+    html.append("</ul>")
+    return "\n".join(html)
+
+
+def page_dates(page):
+    let = dateutil.parser.parse(page["last_edited_time"])
+    ct = dateutil.parser.parse(page["created_time"])
+    return let, ct
+
+
+def events_last_week(page) -> T.Tuple[bool, bool]:
+    """Return a tuple for bool.
+    (True if edited last week, True if created last week)
+    """
+    NOW = datetime.now(timezone.utc)
+    return [(NOW - x).days <= 7 for x in page_dates(page)]
+
+
 class Notion:
     """Notion related functions."""
 
@@ -27,7 +74,7 @@ class Notion:
         assert self.token
         return {
             "Authorization": f"Bearer {self.token}",
-            "Notion-Version": "2022-02-22",
+            "Notion-Version": "2022-06-28",
             "Content-Type": "application/json",
         }
 
@@ -44,7 +91,10 @@ class Notion:
     def get(self, endpoint: str):
         response = requests.get(self._url(endpoint), headers=self._headers())
         assert response.ok, response.text
-        return response.json()["results"]
+        return response.json()
+
+    def get_block(self, blockid):
+        return self.get(f'blocks/{blockid}')
 
     def backup(self, outdir: T.Optional[Path]):
         """Backup notion content"""
@@ -73,17 +123,50 @@ class Notion:
                         file.write(json.dumps(child))
         logging.info("backup is complete")
 
-    def _weekly_update(self, dbid: str):
+    def _weekly_update_db(self, dbid: str, title: str) -> str:
         """Results for a database"""
+        html = [f"<h1> {title} </h1>"]
         payload = dict(page_size=100)
-        return self.post(f"databases/{dbid}/query", payload=payload)
+        pages = self.post(f"databases/{dbid}/query", payload=payload)
+        _pprint(pages[-1])
+
+        NOW = datetime.now(timezone.utc)
+
+        new, updated = [], []
+        for page in pages:
+            let = dateutil.parser.parse(page["last_edited_time"])
+            ct = dateutil.parser.parse(page["created_time"])
+            if (NOW - let).days < 7:
+                updated.append(page)
+            if (datetime.now(timezone.utc) - let).days < 7:
+                new.append(page)
+        html.append("<h2>New</h3>")
+        html.append(pages_to_html(new))
+
+        html.append("<h2>Updated</h3>")
+        html.append(pages_to_html(updated))
+        return "\n".join(html)
+
+    def weekly_update_db(self):
+        """Show weekly updates."""
+        # logging.info("Weekly update")
+        html = self._weekly_update_db("0d4a63a495f84fd0bd9632c82e0963b8", "Journal")
+        print(html)
 
     def weekly_update(self):
         """Show weekly updates."""
-        logging.info("Weekly update")
-        pages = self._weekly_update("0d4a63a495f84fd0bd9632c82e0963b8")
-        for page in pages:
-            let = dateutil.parser.parse(page['last_edited_time'])
-            if (datetime.now(timezone.utc) - let).days < 7:
-                print(page['url'], let)
+        # logging.info("Weekly update")
+        payload = {
+            "sort": {"direction": "descending", "timestamp": "last_edited_time"},
+            "filter": {"property": "object", "value": "page"},
+        }
+        pages = self.post("search", payload=payload)
+        for i, page in enumerate(pages):
+            if not events_last_week(page)[0]:
+                logging.info("Covered one week")
+                break
+            print(i, page["url"])
         _pprint(pages[-1])
+
+
+        # print(html)

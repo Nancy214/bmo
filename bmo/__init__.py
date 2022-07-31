@@ -4,7 +4,7 @@ __version__ = bmo.version.__version__
 import logging
 import os
 
-LOGLEVEL = os.environ.get('BMO_LOGLEVEL', 'WARNING').upper()
+LOGLEVEL = os.environ.get('BMO_LOGLEVEL', 'INFO').upper()
 logging.basicConfig(level=LOGLEVEL)
 
 import sentry_sdk

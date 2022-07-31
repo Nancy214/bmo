@@ -3,15 +3,13 @@
 __author__ = "Dilawar Singh"
 __email__ = "dilawar@subcom.tech"
 
+import logging
 import requests
-import os
 import datetime
 import json
 
 import typing as T
 from pathlib import Path
-
-from loguru import logger
 
 
 class Notion:
@@ -21,9 +19,30 @@ class Notion:
         self.token = token
         self.backup_dir: T.Optional[str] = None
 
+    def _headers(self):
+        assert self.token
+        return {
+            "Authorization": f"Bearer {self.token}",
+            "Notion-Version": "2022-02-22",
+            "Content-Type": "application/json",
+        }
+
+    def _url(self, endpoint: str) -> str:
+        return f"https://api.notion.com/v1/{endpoint}"
+
+    def post(self, endpoint: str, payload={}):
+        response = requests.post(self._url(endpoint), headers=self._headers(), json=payload)
+        assert response.ok, response.text
+        return response.json()['results']
+
+    def get(self, endpoint: str):
+        response = requests.get(self._url(endpoint), headers=self._headers())
+        assert response.ok, response.text
+        return response.json()['results']
+
     def backup(self, outdir: T.Optional[Path]):
         """Backup notion content"""
-        assert self.token is not None, f"Token can't be None"
+        assert self.token is not None, "Token can't be None or empty"
         timestamp = datetime.datetime.now().isoformat()
 
         folder = Path.home() / "backups" / Path(f"notion_backup-{timestamp}")
@@ -31,29 +50,31 @@ class Notion:
             folder = Path(outdir)
         folder.mkdir(parents=True)
 
-        logger.info(f"Creating backup into {folder}")
+        logging.info(f"Creating backup into {folder}")
         # replace YOUR_INTEGRATION_TOKEN with your own secret token
-        headers = {
-            "Authorization": f"Bearer {self.token}",
-            "Notion-Version": "2022-02-22",
-            "Content-Type": "application/json",
-        }
-
-        response = requests.post("https://api.notion.com/v1/search", headers=headers)
-        logger.info(response.json())
-        for block in response.json()["results"]:
+        response = self.post("search")
+        for block in response:
             with open(f'{folder}/{block["id"]}.json', "w") as file:
                 file.write(json.dumps(block))
 
-            child_blocks = requests.get(
-                f'https://api.notion.com/v1/blocks/{block["id"]}/children',
-                headers=headers,
-            )
-            if child_blocks.json()["results"]:
+            child_blocks = self.get(f'blocks/{block["id"]}/children')
+            if child_blocks:
                 datadir = folder / f'{block["id"]}'
                 datadir.mkdir()
 
-                for child in child_blocks.json()["results"]:
+                for child in child_blocks:
                     with open(datadir / f'{child["id"]}.json', "w") as file:
                         file.write(json.dumps(child))
-        logger.info("backup is complete")
+        logging.info("backup is complete")
+
+    def _weekly_update(self, dbid:str):
+        """Results for a database"""
+        payload = dict(page_size=100) 
+        return self.post(f"databases/{dbid}/query", payload=payload)
+
+    def weekly_update(self):
+        """Show weekly updates."""
+        logging.info("Weekly update")
+        pages = self._weekly_update("0d4a63a495f84fd0bd9632c82e0963b8")
+        for page in pages:
+            print(page['id'], page)

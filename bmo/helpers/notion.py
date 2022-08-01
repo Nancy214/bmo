@@ -180,4 +180,3 @@ class Notion:
             "1778deba18a34a338133078b865e5ece", "What are we reading?", False
         )
         return html
-

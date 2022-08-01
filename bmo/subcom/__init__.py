@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-import yagmail
+from envelops import Envelope
 
 import bmo.helpers.notion
 
@@ -33,13 +33,18 @@ def notion_weekly_progress(
     notion = bmo.helpers.notion.Notion(token)
     html = notion.weekly_update()
 
-    sender_email = "noreply@subconscious.co.in"
-    yag = yagmail.SMTP(sender_email, smtp_password)
-
     # create an email and send it.
+    sender_email = "noreply@subconscious.co.in"
     weekno = datetime.today().isocalendar()[1]
     subject = f"SubCom Weekly #{weekno}"
-    yag.send(to=to, subject=subject, contents=html)
+    envelope = Envelope(
+        from_addr=(sender_email, "Subconscious Bot"),
+        to_addr=to,
+        subject=subject,
+        html_body=html,
+    )
+
+    envelope.send("mail.subconcious.co.in", login=sender_email, password=smtp_password)
 
 
 if __name__ == "__main__":

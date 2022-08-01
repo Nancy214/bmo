@@ -1,7 +1,6 @@
 __author__ = "Dilawar Singh"
 __email__ = "dilawar@subcom.tech"
 
-import io
 import sys
 import subprocess
 import shutil
@@ -16,6 +15,12 @@ from pathlib import Path
 import bmo.common
 
 import typer
+
+
+def hash256(msg: bytes) -> str:
+    import hashlib
+
+    return hashlib.sha256(msg).hexdigest()
 
 
 def system() -> T.Tuple[str, str]:
@@ -48,7 +53,7 @@ def find_program(
         if not hint.exists():
             continue
         for p in glob.glob(f"{hint}/**/{name}", recursive=recursive):
-            prg  = shutil.which(p)
+            prg = shutil.which(p)
             if prg is not None:
                 return prg
     return shutil.which(name)

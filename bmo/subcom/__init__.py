@@ -19,7 +19,7 @@ app = typer.Typer()
 @app.command("weekly_email")
 def notion_weekly_progress(
     token: str = typer.Argument("", envvar="NOTION_TOKEN"),
-    smtp_password: str = typer.Option(...),
+    password: str = typer.Option(...),
     to: str = typer.Option("all@subcom.tech"),
 ):
     """This week in SubCom delivered to your INBOX."""
@@ -33,19 +33,29 @@ def notion_weekly_progress(
     notion = bmo.helpers.notion.Notion(token)
     html = notion.weekly_update()
 
-    # create an email and send it.
+    # create an email and send it. Don't send duplicates.
+    emaildir = Path.home() / ".cache" / "bmo"
+    emaildir.mkdir(parents=True, exists_ok=True)
+    h = bmo.command.hash256(html)
+    hfile = emaildir / h
+    if h.exists():
+        logging.warn("Email already sent.")
+        return
+
     sender_email = "noreply@subconscious.co.in"
     weekno = datetime.today().isocalendar()[1]
     subject = f"SubCom Weekly #{weekno}"
     envelope = Envelope(
-        from_addr=(sender_email, "Subconscious Bot"),
+        from_addr=(sender_email, "BMO"),
         to_addr=to,
         subject=subject,
         html_body=html,
     )
 
-    print(f" {sender_email=} {smtp_password=}")
-    envelope.send("mail.subconscious.co.in", login=sender_email, password=smtp_password)
+    envelope.send("mail.subconscious.co.in", login=sender_email, password=password)
+    # write the hash to disk.
+    with hfile.open() as f:
+        f.write(h)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from envelops import Envelope
+from envelopes import Envelope
 
 import bmo.helpers.notion
 
@@ -19,7 +19,7 @@ app = typer.Typer()
 @app.command("weekly_email")
 def notion_weekly_progress(
     token: str = typer.Argument("", envvar="NOTION_TOKEN"),
-    smtp_password: str = typer.Argument("", envvar="SUBCOM_SMTP_PASSWORD"),
+    smtp_password: str = typer.Option(...),
     to: str = typer.Option("all@subcom.tech"),
 ):
     """This week in SubCom delivered to your INBOX."""
@@ -44,7 +44,8 @@ def notion_weekly_progress(
         html_body=html,
     )
 
-    envelope.send("mail.subconcious.co.in", login=sender_email, password=smtp_password)
+    print(f" {sender_email=} {smtp_password=}")
+    envelope.send("mail.subconscious.co.in", login=sender_email, password=smtp_password)
 
 
 if __name__ == "__main__":

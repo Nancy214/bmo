@@ -21,8 +21,7 @@ fix:
 	$(POETRY) run black tests
 
 upload: build
-	$(PYTHON) -m pip install twine --user --upgrade
-	$(PYTHON) -m twine upload dist/*.whl --user __token__ --password $(PYPI_UPLOAD_TOKEN)
+	$(POETRY) run twine upload dist/*.whl --user __token__ --password $(PYPI_UPLOAD_TOKEN)
 
 check: mypy lint
 

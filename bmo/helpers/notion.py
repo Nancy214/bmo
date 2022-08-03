@@ -55,7 +55,7 @@ def page_dates(page):
     return let, ct
 
 
-def events_last_week(page) -> T.Tuple[bool, bool]:
+def events_last_week(page) -> T.List[bool]:
     """Return a tuple for bool.
     (True if edited last week, True if created last week)
     """
@@ -127,7 +127,6 @@ class Notion:
         self, dbid: str, title: str, include_updated: bool = True
     ) -> str:
         """Results for a database"""
-        html = [f"\n<h1>{title}</h1>"]
         payload = dict(page_size=100)
         pages = self.post(f"databases/{dbid}/query", payload=payload)
         NOW = datetime.now(timezone.utc)
@@ -140,9 +139,13 @@ class Notion:
             elif (NOW - let).days < 7:
                 if include_updated:
                     updated.append(page)
-        html.append("<h2>New</h3>")
-        html.append(pages_to_html(new))
+
+        html = [f"\n<h1>{title}</h1>"] if (new or updated) else []
+        if new:
+            html.append("<h2>New</h3>")
+            html.append(pages_to_html(new))
         if updated:
+            html = [f"\n<h1>{title}</h1>"]
             html.append("<h2>Updated</h3>")
             html.append(pages_to_html(updated))
         return "\n".join(html)
@@ -166,17 +169,18 @@ class Notion:
         """Show weekly updates."""
         # logging.info("Weekly update")
         html = ""
+        html += self.weekly_update_db("27fdd796747d4e7da5ab7b895a848e54", "News")
+        html += self.weekly_update_db("0d4a63a495f84fd0bd9632c82e0963b8", "The chatter")
         html += self.weekly_update_db(
-            "444af744203a42f1999356b32a150d2d", "Tasks and Roadmap", False
+            "444af744203a42f1999356b32a150d2d", "Getting things done", False
         )
-        html += self.weekly_update_db("0d4a63a495f84fd0bd9632c82e0963b8", "Journal")
         html += self.weekly_update_db(
-            "ecaca4cfe5fb436f83e04a4d1b89fc4d", "Project Docs"
+            "ecaca4cfe5fb436f83e04a4d1b89fc4d", "Project Docs (everyone hates these!)"
+        )
+        html += self.weekly_update_db(
+            "1778deba18a34a338133078b865e5ece", "What are we reading (really?)", False
         )
         html += self.weekly_update_db(
             "994093f42d194f68811df2cbdc91c27b", "Office Inventory", False
-        )
-        html += self.weekly_update_db(
-            "1778deba18a34a338133078b865e5ece", "What are we reading?", False
         )
         return html

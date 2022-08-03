@@ -1,9 +1,12 @@
 __author__ = "Dilawar Singh"
 __email__ = "dilawar@subcom.tech"
 
+import requests
+import tempfile
 import logging
-import typing as T
 import sys
+
+import typing as T
 from pathlib import Path
 
 import bmo.common
@@ -128,7 +131,7 @@ def download_and_run_script(
             return f.read()
 
     logging.info(f"Executing {scriptpath}")
-    output = run_command(f"bash {scriptpath}")
+    output = bmo.common.run_command(f"bash {scriptpath}")
     return output
 
 

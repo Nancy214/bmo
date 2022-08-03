@@ -7,7 +7,9 @@ __email__ = "dilawar@subcom.tech"
 import logging
 
 import typer
+
 app = typer.Typer()
+
 
 @app.command()
 def doctor() -> str:

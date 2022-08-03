@@ -14,6 +14,7 @@ from pathlib import Path
 
 import bmo.common
 
+
 def _get_manager_opts() -> T.List[str]:
     if bmo.common.is_windows():
         _choco = bmo.common.find_program("choco")

@@ -27,19 +27,21 @@ def _flatten_config_dict(conf, result, prefix="", *, sep="."):
     else:
         result[prefix] = conf
 
+
 def flatten_config_dict(conf, sep="."):
     newdict = conf.copy()
     _flatten_config_dict(conf, newdict, sep=sep)
     return newdict
 
+
 # Thanks https://github.com/tiangolo/typer/issues/86#issuecomment-996374166
 def conf_callback(ctx: typer.Context, param: typer.CallbackParam, value: str):
     if value:
         typer.echo(f"Loading config file {value}")
-        with open(value, "r") as f:
+        with Path(value).open() as f:
             conf = toml.load(f)
-            conf = flatten_config_dict(conf)
-        ctx.default_map = ctx.default_map() or {}
+            conf = flatten_config_dict(conf, sep="_")
+        ctx.default_map = ctx.default_map or {}
         ctx.default_map.update(conf)
     return value
 
@@ -165,11 +167,11 @@ def test_common():
 def test_flatten_dict():
     d = dict(a=dict(b=dict(c=dict(d=5)), e=9), f=-1)
     d1 = flatten_config_dict(d)
-    d2 = flatten_config_dict(d, '-')
-    assert d1['a.b.c.d'] == d['a']['b']['c']['d']
-    assert d2['a-b-c-d'] == d['a']['b']['c']['d']
-    assert d1['f'] == d['f']
-    assert d2['f'] == d['f']
+    d2 = flatten_config_dict(d, "-")
+    assert d1["a.b.c.d"] == d["a"]["b"]["c"]["d"]
+    assert d2["a-b-c-d"] == d["a"]["b"]["c"]["d"]
+    assert d1["f"] == d["f"]
+    assert d2["f"] == d["f"]
 
 
 if __name__ == "__main__":

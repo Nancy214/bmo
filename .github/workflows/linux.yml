@@ -26,7 +26,7 @@ jobs:
         env:
           PYPI_UPLOAD_TOKEN: ${{ secrets.PYPI_UPLOAD_TOKEN }}
         run: |
-          poetry version $(poetry version -s)-nightly-$(date '+%s')
+          poetry version $(poetry version -s).dev$(date '+%s')
           make upload
 
       - name: "Upload to pypi.org"

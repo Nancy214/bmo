@@ -21,7 +21,7 @@ fix:
 	$(POETRY) run black tests
 
 upload: build
-	rm -rf dist/*
+	rm -rf dist
 	$(POETRY) run twine upload dist/*.whl --user __token__ --password $(PYPI_UPLOAD_TOKEN)
 
 check: mypy lint

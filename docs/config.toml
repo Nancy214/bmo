@@ -1,0 +1,11 @@
+[notion]
+token=NOTION_SECRET
+
+[gitlab]
+token=GITLAB_SECRET
+
+[smtp]
+server=mail.example.co.in
+username=noreply@example.co.in
+password=password
+from="Subconscious BMO"

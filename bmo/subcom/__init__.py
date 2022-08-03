@@ -2,13 +2,15 @@ __author__ = "Dilawar Singh"
 __email__ = "dilawar@subcom.tech"
 
 
-import requests
 import logging
+
 from datetime import datetime
 from pathlib import Path
+import toml
 
 from envelopes import Envelope
 
+import bmo.common
 import bmo.helpers.notion
 
 import typer
@@ -16,19 +18,22 @@ import typer
 app = typer.Typer()
 
 
-@app.command("weekly_email")
-def notion_weekly_progress(
-    token: str = typer.Argument("", envvar="NOTION_TOKEN"),
-    password: str = typer.Option(...),
+@app.command()
+def weekly_email(
     to: str = typer.Option("all@subcom.tech"),
+    config: str = typer.Option(..., callback=bmo.common.conf_callback, is_eager=True),
+    notion_token: str = typer.Option(""),
+    smtp_server: str = typer.Option(""),
+    smtp_username: str = typer.Option(""),
+    smtp_password: str = typer.Option(...),
 ):
     """This week in SubCom delivered to your INBOX."""
     if not token:
         logging.error("Empty token. Add `--help` to usage.")
         return
-    if not smtp_password:
-        logging.error("Empty SMTP password. See `--help`")
-        return
+
+    print(smtp_server, smtp_username, smtp_password)
+    quit()
 
     notion = bmo.helpers.notion.Notion(token)
     html = notion.weekly_update()

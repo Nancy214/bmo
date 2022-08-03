@@ -23,6 +23,7 @@ def weekly_email(
     config: str = typer.Option(..., callback=bmo.common.conf_callback, is_eager=True),
     notion_token: str = typer.Option(...),
     smtp_server: str = typer.Option(...),
+    smtp_port: int = typer.Option(...),
     smtp_username: str = typer.Option(...),
     smtp_password: str = typer.Option(...),
     force: bool = typer.Option(False, "--force"),
@@ -65,7 +66,10 @@ def weekly_email(
     )
 
     logging.info(f"Sending email to {to}")
-    envelope.send(smtp_server, login=sender_email, password=smtp_password)
+    extra = ""
+    if smtp_port == 587:
+        extra = "starttls"
+    envelope.send(smtp_server, smtp_port, sender_email, smtp_password, extra)
     # write the hash to disk.
     hfile.parent.mkdir(parents=True, exist_ok=True)
     hfile.write_text(h)
